@@ -1,3 +1,5 @@
+package repository;
+
 import annotations.Table;
 
 import java.lang.reflect.Proxy;
