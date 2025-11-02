@@ -13,4 +13,5 @@ public interface SimpleJDBCRepository<T, ID> {
     int delete(ID id);
     boolean existsById(ID id);
     List<T> findAll();
+    void saveAll(List<T> entities);
 }
