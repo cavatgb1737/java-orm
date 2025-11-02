@@ -4,8 +4,6 @@ import repository.SQLConnection;
 import test.Test;
 import test.TestRepository;
 
-import java.util.UUID;
-
 public class main{
 
     public static void main(String[] args){

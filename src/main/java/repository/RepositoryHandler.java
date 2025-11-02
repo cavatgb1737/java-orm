@@ -43,10 +43,9 @@ public class RepositoryHandler implements InvocationHandler {
             String paramName = name.substring(6);
             Class<?> returnType = method.getReturnType();
 
-            if(List.class.isAssignableFrom(returnType)){
+            if (List.class.isAssignableFrom(returnType)) {
                 return handleFindByCustomList(entityClass, args[0], paramName);
-            }
-            else{
+            } else {
                 return handleFindByCustom(entityClass, args[0], paramName);
             }
 
@@ -89,11 +88,13 @@ public class RepositoryHandler implements InvocationHandler {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+
         Class<?> clazz = obj.getClass();
         checkAndThrow(clazz);
         String tableName = clazz.getAnnotation(Table.class).name();
         List<String> columns = new ArrayList<>();
         List<Object> values = new ArrayList<>();
+
         for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
             if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
@@ -108,6 +109,7 @@ public class RepositoryHandler implements InvocationHandler {
                 }
             }
         }
+
         StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(tableName).append(" (");
         sql.append(String.join(", ", columns));
@@ -115,6 +117,7 @@ public class RepositoryHandler implements InvocationHandler {
         sql.append("?,".repeat(columns.size()));
         sql.setLength(sql.length() - 1);
         sql.append(")");
+
         try (PreparedStatement stmt = sqlConnection.getConn().prepareStatement(sql.toString())) {
             for (int i = 0; i < values.size(); i++) stmt.setObject(i + 1, values.get(i));
             int rows = stmt.executeUpdate();
@@ -167,6 +170,7 @@ public class RepositoryHandler implements InvocationHandler {
             if (rs.next()) {
                 T instance = clazz.getDeclaredConstructor().newInstance();
                 for (Field field : fields) {
+                    field.setAccessible(true);
                     String colName = field.isAnnotationPresent(Column.class) && !field.getAnnotation(Column.class).name().isEmpty()
                             ? field.getAnnotation(Column.class).name()
                             : field.getName();
@@ -179,7 +183,6 @@ public class RepositoryHandler implements InvocationHandler {
             throw new RuntimeException(e);
         }
     }
-
 
     public int handleDeleteById(Class<?> clazz, Object idValue) {
         checkAndThrow(clazz);
@@ -203,10 +206,8 @@ public class RepositoryHandler implements InvocationHandler {
     }
 
     public <T> List<T> handleFindByCustomList(Class<T> clazz, Object param, String paramName) {
-
         checkAndThrow(clazz);
         String tableName = clazz.getAnnotation(Table.class).name();
-
         paramName = Character.toLowerCase(paramName.charAt(0)) + paramName.substring(1);
 
         Field targetField = null;
@@ -226,25 +227,18 @@ public class RepositoryHandler implements InvocationHandler {
         String sql = "SELECT * FROM " + tableName + " WHERE " + paramName + " = ?";
 
         try (PreparedStatement stmt = sqlConnection.getConn().prepareStatement(sql)) {
-
             Class<?> type = targetField.getType();
-            if (type == Integer.class || type == int.class) {
-                stmt.setInt(1, (Integer) param);
-            } else if (type == Long.class || type == long.class) {
-                stmt.setLong(1, (Long) param);
-            } else if (type == Double.class || type == double.class) {
-                stmt.setDouble(1, (Double) param);
-            } else if (type == Float.class || type == float.class) {
-                stmt.setFloat(1, (Float) param);
-            } else {
-                stmt.setObject(1, param);
-            }
+            if (type == Integer.class || type == int.class) stmt.setInt(1, (Integer) param);
+            else if (type == Long.class || type == long.class) stmt.setLong(1, (Long) param);
+            else if (type == Double.class || type == double.class) stmt.setDouble(1, (Double) param);
+            else if (type == Float.class || type == float.class) stmt.setFloat(1, (Float) param);
+            else stmt.setObject(1, param);
 
             List<T> results = new ArrayList<>();
             ResultSet rs = stmt.executeQuery();
             if (sqlConnection.getLogsEnabled()) log.info(sql);
 
-            while(rs.next()) {
+            while (rs.next()) {
                 T instance = clazz.getDeclaredConstructor().newInstance();
                 for (Field field : clazz.getDeclaredFields()) {
                     field.setAccessible(true);
@@ -265,7 +259,6 @@ public class RepositoryHandler implements InvocationHandler {
     public <T> T handleFindByCustom(Class<T> clazz, Object param, String paramName) {
         checkAndThrow(clazz);
         String tableName = clazz.getAnnotation(Table.class).name();
-
         paramName = Character.toLowerCase(paramName.charAt(0)) + paramName.substring(1);
 
         Field targetField = null;
@@ -285,19 +278,12 @@ public class RepositoryHandler implements InvocationHandler {
         String sql = "SELECT * FROM " + tableName + " WHERE " + paramName + " = ?";
 
         try (PreparedStatement stmt = sqlConnection.getConn().prepareStatement(sql)) {
-
             Class<?> type = targetField.getType();
-            if (type == Integer.class || type == int.class) {
-                stmt.setInt(1, (Integer) param);
-            } else if (type == Long.class || type == long.class) {
-                stmt.setLong(1, (Long) param);
-            } else if (type == Double.class || type == double.class) {
-                stmt.setDouble(1, (Double) param);
-            } else if (type == Float.class || type == float.class) {
-                stmt.setFloat(1, (Float) param);
-            } else {
-                stmt.setObject(1, param);
-            }
+            if (type == Integer.class || type == int.class) stmt.setInt(1, (Integer) param);
+            else if (type == Long.class || type == long.class) stmt.setLong(1, (Long) param);
+            else if (type == Double.class || type == double.class) stmt.setDouble(1, (Double) param);
+            else if (type == Float.class || type == float.class) stmt.setFloat(1, (Float) param);
+            else stmt.setObject(1, param);
 
             ResultSet rs = stmt.executeQuery();
             if (sqlConnection.getLogsEnabled()) log.info(sql);
@@ -319,7 +305,6 @@ public class RepositoryHandler implements InvocationHandler {
             throw new RuntimeException(e);
         }
     }
-
 
     public boolean handleExistsByCustom(Class<?> clazz, Object param, String paramName) {
         checkAndThrow(clazz);
@@ -370,8 +355,9 @@ public class RepositoryHandler implements InvocationHandler {
             while (rs.next()) {
                 T obj = clazz.getDeclaredConstructor().newInstance();
                 for (Field field : fields) {
+                    field.setAccessible(true); // <-- important
                     String colName = field.isAnnotationPresent(Column.class) ? field.getAnnotation(Column.class).name() : field.getName();
-                    if(colName.isEmpty()) colName = field.getName();
+                    if (colName.isEmpty()) colName = field.getName();
                     field.set(obj, rs.getObject(colName));
                 }
                 list.add(obj);
