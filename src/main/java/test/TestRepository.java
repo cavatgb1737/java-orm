@@ -2,12 +2,20 @@ package test;
 
 import repository.SimpleJDBCRepository;
 
+import java.util.List;
+
 /*
     Test repository class
  */
 public interface TestRepository extends SimpleJDBCRepository<Test, String> {
+
     /*
-    Custom repository method
+    Custom repository methods
      */
-    String findByName(String name);
+
+
+
+    List<Test> findByTest_Salary(double test_salary);
+
+    Test findByUsername(String username);
 }

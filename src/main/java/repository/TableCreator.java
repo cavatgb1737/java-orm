@@ -1,5 +1,6 @@
 package repository;
 
+import annotations.Column;
 import annotations.Id;
 import annotations.Required;
 import annotations.Table;
@@ -23,23 +24,32 @@ public class TableCreator {
                 .append(tableName)
                 .append(" (");
 
-        for(Field field: clazz.getDeclaredFields()){
-
+        for (Field field : clazz.getDeclaredFields()) {
             Class<?> typeClass = field.getType();
             String typeName = sqlConnection.getDatabase().getSqlType(typeClass.getSimpleName());
-            if(typeName == null) throw new RuntimeException("Unsupported type: " + typeClass.getSimpleName());
+            if (typeName == null) throw new RuntimeException("Unsupported type: " + typeClass.getSimpleName());
+
             String varName = field.getName();
-
-            if(field.isAnnotationPresent(Id.class)){
-                sql.append(varName).append(" ").append(typeName).append(" PRIMARY KEY, ");
-            }
-            else if(field.isAnnotationPresent(Required.class)){
-                sql.append(varName).append(" ").append(typeName).append(" NOT NULL, ");
-            }
-            else{
-                sql.append(varName).append(" ").append(typeName).append(", ");
+            if(field.isAnnotationPresent(Column.class)){
+                Column col = field.getAnnotation(Column.class);
+                if (!col.name().isEmpty()) varName = col.name();
             }
 
+            sql.append(varName).append(" ").append(typeName);
+
+            if (field.isAnnotationPresent(Id.class)) {
+                sql.append(" PRIMARY KEY");
+            } else if (field.isAnnotationPresent(Column.class)) {
+                Column col = field.getAnnotation(Column.class);
+                if (!col.nullable() || field.isAnnotationPresent(Required.class)) {
+                    sql.append(" NOT NULL");
+                }
+                if (col.unique()) {
+                    sql.append(" UNIQUE");
+                }
+            }
+
+            sql.append(", ");
         }
 
         sql.setLength(sql.length() - 2);
@@ -47,10 +57,11 @@ public class TableCreator {
 
         Connection conn = sqlConnection.getConn();
 
-        try{
-            PreparedStatement stmt = conn.prepareStatement(sql.toString());
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             stmt.executeUpdate();
-
+            if(sqlConnection.getLogsEnabled()){
+                log.info("Created table with sql: {}", sql);
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

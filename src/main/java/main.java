@@ -1,7 +1,10 @@
 import databases.DatabaseType;
 import repository.RepositoryFactory;
 import repository.SQLConnection;
+import test.Test;
 import test.TestRepository;
+
+import java.util.UUID;
 
 public class main{
 
@@ -16,10 +19,22 @@ public class main{
         //Initialize a repository in test folder
         TestRepository testRepository = RepositoryFactory.createRepository(TestRepository.class, conn);
 
-        //Use methods
+        //Use repository methods
+
+        for(Test test: testRepository.findByTest_Salary(75000)){
+            System.out.println(test.getName());
+        }
+
+        testRepository.findByUsername("test123");
+
         testRepository.findAll();
-        testRepository.findByName("testname");
-        testRepository.existsById("testid");
+
+        testRepository.delete("testid");
+
+
+
+
+
 
     }
 
